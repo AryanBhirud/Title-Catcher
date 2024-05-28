@@ -1,0 +1,35 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 350px;
+    height: 200px;
+}
+h1 {
+    text-align: left;
+}
+.title {
+    display: flex;
+    background-color: rgb(57, 57, 57);
+    color: white;
+    height: 40px;
+    width: 90%;
+    margin: 20px;
+    border-radius: 10px;
+}
+.title p {
+    padding-left: 10px;
+}
+button {
+    height: 40px;
+    width: 100px;
+    background-color: rgb(149, 205, 65);
+    color: black;
+    border: 0.5px solid black;
+    padding: 5px;
+    margin: 10px;
+}
+footer{
+    text-align: right;
+}
