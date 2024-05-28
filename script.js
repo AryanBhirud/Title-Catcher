@@ -4,14 +4,9 @@ document.addEventListener("DOMContentLoaded", () => {
         .addEventListener("click", catchTitle);
 });
 function catchTitle() {
+    const tabTitle = document.getElementById("tab-title")
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs.length === 0) {
-            document.getElementById("tab-title").textContent =
-                "No active tab found";
-            console.log("No Active Tabs Found!");
-            return;
-        }
-        document.getElementById("tab-title").textContent = tabs[0].title;
+        tabTitle.textContent = tabs[0].title;
         resizeExtension(tabs[0].title.length);
     });
 }
