@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Tab Title Catcher",
+  "name": "Linkedin Data Extractor",
   "description": "A demo chrome extension which displays the title of the tab in the popup when a button is clicked. A submission for Banao-Chrome Extension Internship.",
   "version": "1.0",
   "action": {
@@ -8,6 +8,17 @@
     "default_icon": "icon.png"
   },
   "permissions": [
-    "activeTab"
-  ]
+    "activeTab",
+    "scripting"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/in/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
 }
