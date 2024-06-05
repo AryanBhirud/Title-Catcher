@@ -2,16 +2,24 @@ body{
     width: 300px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    justify-content: center;
     align-items: center;
-}
-textarea{
-    width: 95%;
-}
-button{
-    height: 40px;
-    width: 100px;
-    background-color: rgb(149, 205, 65);
-    color: black;
-    border: 0.5px solid black;
-}
+    gap: 5px;
+  }
+  
+  input{
+    height: 25px;
+    width: 100%;
+    margin: 0px 10px 0px 10px;
+  }
+  
+  button{
+    height: 30px;
+    width: 50%;
+  }
+  button:disabled{
+    background-color: rgb(182, 182, 182);
+  }
+  button:enabled{
+    background-color: rgb(130, 195, 34);
+  }
