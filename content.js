@@ -1,98 +1,86 @@
-function waitForElement(selector, timeout = 10000) {
-	return new Promise((resolve, reject) => {
-		const interval = 100;
-		const endTime = Date.now() + timeout;
-		const check = () => {
-			const elements = document.querySelectorAll(selector);
-			if (elements.length > 0) {
-				resolve(elements);
-			} else if (Date.now() < endTime) {
-				setTimeout(check, interval);
+const overlayHtml = `
+	<div id="screen-record-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+		<button id="start-record" style="padding: 10px 20px; margin: 10px; background-color: green; color: white; font-size: 20px;">Start Recording</button>
+		<button id="exit-overlay" style="padding: 10px 20px; margin: 10px; background-color: red; color: white; font-size: 20px;">Exit</button>
+	</div>
+	<div id="record-controls" style="position: fixed; bottom: 10px; right: 10px; z-index: 10001; display: none;">
+		<button id="stop-record" style="padding: 10px 20px; background-color: red; color: white; font-size: 20px;">Stop Recording</button>
+	</div>
+	<div id="recorded-videos-container" style="position: fixed; top: 10px; right: 10px; z-index: 10002; display: none; max-height: 90%; overflow-y: auto;">
+		<div id="recorded-videos"></div>
+	</div>
+`;
+document.body.insertAdjacentHTML('beforeend', overlayHtml);
+
+const startRecordButton = document.getElementById('start-record');
+const exitOverlayButton = document.getElementById('exit-overlay');
+const stopRecordButton = document.getElementById('stop-record');
+const recordedVideosContainer = document.getElementById('recorded-videos-container');
+const recordedVideosDiv = document.getElementById('recorded-videos');
+const overlay = document.getElementById('screen-record-overlay');
+const recordControls = document.getElementById('record-controls');
+
+let mediaRecorder;
+let recordedChunks = [];
+let allVideos = [];
+
+startRecordButton.addEventListener('click', async () => {
+	const streamId = await new Promise((resolve, reject) => {
+		chrome.runtime.sendMessage({ type: 'capture' }, (response) => {
+			if (response.type === 'success') {
+				resolve(response.streamId);
 			} else {
-				reject(
-					new Error(
-						`Element with selector "${selector}" not found within ${timeout}ms`
-					)
-				);
+				reject(response.message);
 			}
-		};
-		check();
+		});
 	});
-}
 
-function waitForTag(selector, timeout = 10000) {
-	return new Promise((resolve, reject) => {
-		const interval = 100;
-		const endTime = Date.now() + timeout;
-		const check = () => {
-			const element = document.querySelector(selector);
-			if (element) {
-				resolve(element);
-			} else if (Date.now() < endTime) {
-				setTimeout(check, interval);
-			} else {
-				reject(
-					new Error(
-						`Element with selector "${selector}" not found within ${timeout}ms`
-					)
-				);
+	const stream = await navigator.mediaDevices.getUserMedia({
+		video: {
+			mandatory: {
+				chromeMediaSource: 'desktop',
+				chromeMediaSourceId: streamId
 			}
-		};
-		check();
+		}
 	});
-}
 
-chrome.storage.local.get(["likes", "comments", "commentText"], async (data) => {
-	const likes = parseInt(data.likes, 10);
-	const comments = parseInt(data.comments, 10);
-	const commentText = data.commentText;
-	let likedCount = 0;
-	let commentedCount = 0;
-	const commentedPosts = []; 
-	while (likedCount < likes || commentedCount < comments) {
-	  let likebuttons = await waitForElement(".reactions-react-button.feed-shared-social-action-bar__action-button button.react-button__trigger");
-		for (let i = 0; i < likebuttons.length && likedCount < likes; i++) {
-			const button = likebuttons[i];
-			if (button.getAttribute("aria-pressed") === "false") {
-				button.click();
-				console.log(`Liked post ${likedCount + 1}`);
-				likedCount++;
-				await new Promise((resolve) => setTimeout(resolve, 500)); 
-			}
+	mediaRecorder = new MediaRecorder(stream);
+	mediaRecorder.ondataavailable = (event) => {
+		if (event.data.size > 0) {
+			recordedChunks.push(event.data);
 		}
+	};
 
-		let commentButtons = await waitForElement("button.comment-button");
-		for (let i = 0; i < commentButtons.length && commentedCount < comments; i++) {
-			const button = commentButtons[i];
-			const postElement = button.closest("div.feed-shared-update-v2");
-			const postId = postElement.getAttribute("data-urn"); 
+	mediaRecorder.onstop = () => {
+		const blob = new Blob(recordedChunks, { type: 'video/webm' });
+		const videoURL = URL.createObjectURL(blob);
+		allVideos.push(videoURL);
 
-			if (postId && !commentedPosts.includes(postId)) {
-				button.click();
-				await new Promise((resolve) => setTimeout(resolve, 500)); 
-				let commentBoxes = await waitForElement("div.ql-editor p");
-				commentBoxes = Array.from(commentBoxes).filter((box) => !commentedPosts.includes(postId));
-				const lastCommentBox = commentBoxes[commentBoxes.length - 1];
-				if (lastCommentBox) {
-					lastCommentBox.innerText = commentText;
-					const submitButton = await waitForTag("button.comments-comment-box__submit-button");
-					if (submitButton) {
-						submitButton.click();
-						console.log(`Commented on post ${commentedCount + 1}`);
-						commentedCount++;
-						commentedPosts.push(postId);
-						await new Promise((resolve) => setTimeout(resolve, 500)); 
-					}
-				}
-			}
-		}
-		if (likedCount < likes || commentedCount < comments) {
-			window.scrollTo({
-				top: document.body.scrollHeight,
-				behavior: 'smooth'
-			});
-			await new Promise(resolve => setTimeout(resolve, 500));
-		}
-	}
+		const videoElement = document.createElement('video');
+		videoElement.src = videoURL;
+		videoElement.controls = true;
+		videoElement.style.width = '300px';
+		videoElement.style.height = 'auto';
+		videoElement.style.margin = '10px';
+		recordedVideosDiv.appendChild(videoElement);
 
+		recordedChunks = [];
+		recordedVideosContainer.style.display = 'block';
+	};
+
+	mediaRecorder.start();
+	overlay.style.display = 'none';
+	recordControls.style.display = 'block';
+});
+
+stopRecordButton.addEventListener('click', () => {
+	mediaRecorder.stop();
+	recordControls.style.display = 'none';
+	overlay.style.display = 'flex';
+});
+
+exitOverlayButton.addEventListener('click', () => {
+	document.getElementById('screen-record-overlay').remove();
+	document.getElementById('record-controls').remove();
+	document.getElementById('recorded-videos-container').remove();
 });

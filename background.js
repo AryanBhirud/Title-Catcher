@@ -1,9 +1,12 @@
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && tab.url.includes('linkedin.com/feed')) {
-      chrome.scripting.executeScript({
-        target: { tabId: tabId },
-        files: ['content.js']
-      });
-    }
-  });
-  
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message.type === 'capture') {
+		chrome.desktopCapture.chooseDesktopMedia(['screen', 'window', 'tab'], sender.tab, (streamId) => {
+			if (!streamId) {
+				sendResponse({ type: 'error', message: 'Failed to get stream ID' });
+			} else {
+				sendResponse({ type: 'success', streamId: streamId });
+			}
+		});
+		return true; 
+	}
+});

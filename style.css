@@ -1,25 +1,14 @@
-body{
-    width: 300px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-  }
-  
-  input{
-    height: 25px;
-    width: 100%;
-    margin: 0px 10px 0px 10px;
-  }
-  
-  button{
-    height: 30px;
-    width: 50%;
-  }
-  button:disabled{
-    background-color: rgb(182, 182, 182);
-  }
-  button:enabled{
-    background-color: rgb(130, 195, 34);
-  }
+body {
+  width: 200px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+button{
+  background-color: red;
+  color: white;
+  font-size: 20px;
+}

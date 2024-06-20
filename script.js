@@ -1,24 +1,15 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const likesInput = document.getElementById("likes");
-  const commentsInput = document.getElementById("comments");
-  const commentTextInput = document.getElementById("commentText");
-  const startButton = document.getElementById("startButton");
-
-  function validateInputs() {
-    startButton.disabled = !likesInput.value || !commentsInput.value || !commentTextInput.value.trim();
-  }
-
-  likesInput.addEventListener("input", validateInputs);
-  commentsInput.addEventListener("input", validateInputs);
-  commentTextInput.addEventListener("input", validateInputs);
-
-  startButton.addEventListener("click", function () {
-    const likes = parseInt(likesInput.value.trim(), 10);
-    const comments = parseInt(commentsInput.value, 10);
-    const commentText = commentTextInput.value;
-
-    chrome.storage.local.set({ likes, comments, commentText }, () => {
-      chrome.tabs.create({ url: "https://www.linkedin.com/feed/" });
-    });
-  });
+document.getElementById('record').addEventListener('click', async () => {
+	try {
+		const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		if (tab.id) {
+			await chrome.scripting.executeScript({
+				target: { tabId: tab.id },
+				files: ['content.js']
+			});
+		} else {
+			console.error('No active tab found');
+		}
+	} catch (error) {
+		console.error('Error injecting script: ', error);
+	}
 });
